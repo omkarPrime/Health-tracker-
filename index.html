@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VitalSigns Pro | Health Analytics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #4f46e5;
+            --accent: #818cf8;
+            --background: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: #1e293b;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 1rem 2rem;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 80px auto 2rem;
+            padding: 0 1rem;
+        }
+
+        .vital-input-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .vital-input {
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .vital-input:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.3);
+        }
+
+        .analyze-btn {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 auto;
+        }
+
+        .analyze-btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .results-section {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+            animation: slideUp 0.5s ease;
+        }
+
+        .chart-container {
+            height: 400px;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .analysis-card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .risk-level {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .recommendations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .recommendation-card {
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .recommendation-card:hover {
+            transform: translateY(-3px);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin-top: 70px;
+                padding: 0 0.5rem;
+            }
+            
+            .vital-input-section {
+                padding: 1.5rem;
+            }
+            
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1><i class="fas fa-heartbeat"></i> VitalSigns Pro</h1>
+    </nav>
+
+    <div class="container">
+        <section class="vital-input-section">
+            <h2 style="text-align: center; margin-bottom: 1.5rem;">Enter Your Vital Signs</h2>
+            <div class="input-group">
+                <input type="number" class="vital-input" id="heart-rate" placeholder="Heart Rate (bpm)">
+                <input type="number" class="vital-input" id="blood-pressure-sys" placeholder="BP Systolic (mmHg)">
+                <input type="number" class="vital-input" id="blood-pressure-dia" placeholder="BP Diastolic (mmHg)">
+                <input type="number" class="vital-input" id="respiratory-rate" placeholder="Respiratory Rate (bpm)">
+                <input type="number" class="vital-input" id="temperature" placeholder="Temperature (°F)">
+            </div>
+            <button class="analyze-btn" onclick="analyzeVitals()">
+                <i class="fas fa-chart-bar"></i> Analyze Vitals
+            </button>
+        </section>
+
+        <section class="results-section" id="results">
+            <div class="chart-container">
+                <canvas id="vitalChart"></canvas>
+            </div>
+            
+            <div class="analysis-grid" id="analysis-grid"></div>
+            
+            <h3 style="margin: 2rem 0 1rem;">Recommendations</h3>
+            <div class="recommendations" id="recommendations"></div>
+        </section>
+    </div>
+
+    <script>
+        const normalRanges = {
+            heartRate: { min: 60, max: 100 },
+            bpSys: { min: 90, max: 120 },
+            bpDia: { min: 60, max: 80 },
+            respRate: { min: 12, max: 20 },
+            temp: { min: 97.7, max: 99.5 }
+        };
+
+        let vitalChart;
+
+        function analyzeVitals() {
+            // Clear previous results
+            document.getElementById('analysis-grid').innerHTML = '';
+            document.getElementById('recommendations').innerHTML = '';
+            
+            // Get values
+            const vitals = {
+                heartRate: parseInt(document.getElementById('heart-rate').value) || 0,
+                bpSys: parseInt(document.getElementById('blood-pressure-sys').value) || 0,
+                bpDia: parseInt(document.getElementById('blood-pressure-dia').value) || 0,
+                respRate: parseInt(document.getElementById('respiratory-rate').value) || 0,
+                temp: parseFloat(document.getElementById('temperature').value) || 0
+            };
+
+            // Show results section
+            document.getElementById('results').style.display = 'block';
+            
+            // Update chart
+            updateChart(vitals);
+            
+            // Generate analysis
+            generateAnalysis(vitals);
+        }
+
+        function generateAnalysis(vitals) {
+            const analysisGrid = document.getElementById('analysis-grid');
+            
+            // Heart Rate Analysis
+            analysisGrid.innerHTML += createAnalysisCard(
+                'heart',
+                'Heart Rate',
+                vitals.heartRate,
+                normalRanges.heartRate,
+                analyzeHeartRate(vitals.heartRate)
+            );
+
+            // Blood Pressure Analysis
+            analysisGrid.innerHTML += createAnalysisCard(
+                'blood-pressure',
+                'Blood Pressure',
+                `${vitals.bpSys}/${vitals.bpDia}`,
+                `${normalRanges.bpSys.min}-${normalRanges.bpSys.max}/${normalRanges.bpDia.min}-${normalRanges.bpDia.max}`,
+                analyzeBloodPressure(vitals.bpSys, vitals.bpDia)
+            );
+
+            // Add other analyses similarly...
+        }
+
+        function createAnalysisCard(id, title, value, normal, analysis) {
+            return `
+                <div class="analysis-card" id="${id}-analysis">
+                    <h3>${title}</h3>
+                    <div class="risk-level">
+                        ${analysis.icon} ${analysis.riskLevel}
+                    </div>
+                    <p><strong>Your Value:</strong> ${value}</p>
+                    <p><strong>Normal Range:</strong> ${normal}</p>
+                    <div class="analysis-content">${analysis.content}</div>
+                </div>
+            `;
+        }
+
+        function analyzeHeartRate(hr) {
+            let analysis = { icon: '❤️', riskLevel: 'Normal', content: '' };
+            
+            if (hr < normalRanges.heartRate.min) {
+                analysis = {
+                    icon: '⚠️',
+                    riskLevel: 'Bradycardia Detected',
+                    content: `Heart rate below normal (${normalRanges.heartRate.min}-${normalRanges.heartRate.max} bpm). Possible causes include electrolyte imbalances, hypothyroidism, or heart block. Recommendations: Consult a cardiologist, check for dizziness, and monitor regularly.`
+                };
+            } else if (hr > normalRanges.heartRate.max) {
+                analysis = {
+                    icon: '⚠️',
+                    riskLevel: 'Tachycardia Detected',
+                    content: `Elevated heart rate. Possible causes: anxiety, anemia, hyperthyroidism, or heart disease. Recommendations: Practice deep breathing, avoid stimulants, and seek medical attention if persistent.`
+                };
+            } else {
+                analysis.content = 'Your heart rate is within normal range. Maintain healthy habits!';
+            }
+            return analysis;
+        }
+
+        function analyzeBloodPressure(sys, dia) {
+            let analysis = { icon: '🩺', riskLevel: 'Normal', content: '' };
+            // Add blood pressure analysis logic
+            return analysis;
+        }
+
+        function updateChart(vitals) {
+            if (vitalChart) vitalChart.destroy();
+            
+            const ctx = document.getElementById('vitalChart').getContext('2d');
+            vitalChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Heart Rate', 'BP Systolic', 'BP Diastolic', 'Resp Rate', 'Temperature'],
+                    datasets: [{
+                        label: 'Your Values',
+                        data: [vitals.heartRate, vitals.bpSys, vitals.bpDia, 
+                               vitals.respRate, vitals.temp],
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: '#4f46e5',
+                        pointBackgroundColor: '#4f46e5',
+                        pointBorderColor: '#fff',
+                    },
+                    {
+                        label: 'Normal Range',
+                        data: [
+                            normalRanges.heartRate.max,
+                            normalRanges.bpSys.max,
+                            normalRanges.bpDia.max,
+                            normalRanges.respRate.max,
+                            normalRanges.temp.max
+                        ],
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        borderColor: '#22c55e',
+                        pointRadius: 0,
+                        borderDash: [5,5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.1)' },
+                            pointLabels: { font: { size: 14 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { enabled: true }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
